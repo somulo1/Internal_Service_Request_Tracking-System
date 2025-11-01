@@ -3,15 +3,30 @@ Main Flask application for the Internal Service Request Tracking System.
 """
 
 from flask import Flask, render_template, request, redirect, url_for, flash
+from flask_login import LoginManager, login_user, login_required, logout_user, current_user
+from werkzeug.security import check_password_hash
 import requests
 from config import Config
-from database import init_db, insert_request, get_all_requests, update_request_status
+from database import init_db, init_auth_db, insert_request, get_all_requests, update_request_status, get_user_by_username
 
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# Initialize database on startup
+# Initialize Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+login_manager.login_message = 'Please log in to access this page.'
+
+# Initialize databases on startup
 init_db()
+init_auth_db()
+
+@login_manager.user_loader
+def load_user(user_id):
+    """Load user for Flask-Login."""
+    from database import get_user_by_id
+    return get_user_by_id(user_id)
 
 def get_departments():
     """Fetch department data from external API."""
@@ -27,11 +42,67 @@ def get_departments():
     return ['IT', 'HR', 'Finance', 'Operations']  # Fallback
 
 @app.route('/')
+@login_required
 def index():
-    """Home page redirect to submit."""
+    """Home page redirect based on user role."""
+    if current_user.role == 'admin':
+        return redirect(url_for('admin'))
     return redirect(url_for('submit'))
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """Handle user login."""
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        if not username or not password:
+            flash('Please provide both username and password.', 'error')
+            return redirect(url_for('login'))
+
+        user = get_user_by_username(username)
+        if user and user['password_hash'] == password:  # Simple check for demo
+            # Create a simple user object for Flask-Login
+            class User:
+                def __init__(self, user_data):
+                    self.id = user_data['id']
+                    self.username = user_data['username']
+                    self.role = user_data['role']
+                    self.is_active = user_data['is_active']
+
+                @property
+                def is_authenticated(self):
+                    return True
+
+                @property
+                def is_anonymous(self):
+                    return False
+
+                def get_id(self):
+                    return str(self.id)
+
+            login_user(User(user))
+            flash(f'Welcome back, {username}!', 'success')
+            next_page = request.args.get('next')
+            return redirect(next_page) if next_page else redirect(url_for('index'))
+        else:
+            flash('Invalid username or password.', 'error')
+
+    return render_template('login.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    """Handle user logout."""
+    logout_user()
+    flash('You have been logged out successfully.', 'success')
+    return redirect(url_for('login'))
+
 @app.route('/submit', methods=['GET', 'POST'])
+@login_required
 def submit():
     """Handle service request submission."""
     if request.method == 'POST':
@@ -53,6 +124,7 @@ def submit():
     return render_template('submit.html', departments=departments, categories=categories)
 
 @app.route('/admin', methods=['GET', 'POST'])
+@login_required
 def admin():
     """Admin panel to view and update requests."""
     if request.method == 'POST':
