@@ -6,8 +6,11 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import check_password_hash
 import requests
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from config import Config
-from database import init_db, init_auth_db, insert_request, get_all_requests, update_request_status, get_user_by_username
+from database import init_db, init_auth_db, init_settings_db, insert_request, get_all_requests, update_request_status, get_user_by_username, get_setting, update_setting, get_all_settings, get_decrypted_setting
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -21,6 +24,7 @@ login_manager.login_message = 'Please log in to access this page.'
 # Initialize databases on startup
 init_db()
 init_auth_db()
+init_settings_db()
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -61,7 +65,52 @@ def get_departments():
             return departments
     except Exception as e:
         app.logger.error(f"Error fetching departments: {e}")
-    return ['IT', 'HR', 'Finance', 'Operations']  # Fallback
+    return ['IT Support', 'Human Resources', 'Finance', 'Operations', 'Customer Service']  # Fallback for financial institution
+
+def send_notification_email(requester_name, department, category, description):
+    """Send email notification for new service request using SMTP."""
+    try:
+        # Create message
+        msg = MIMEMultipart()
+        msg['From'] = Config.EMAIL_FROM
+        msg['To'] = Config.EMAIL_TO
+        msg['Subject'] = f'New IT Service Request from {requester_name}'
+
+        email_content = f"""
+        New IT Service Request Submitted:
+
+        Requester: {requester_name}
+        Department: {department}
+        Category: {category}
+        Description: {description}
+
+        Please review and resolve this request in the admin panel.
+        Login to: http://your-domain.com/admin
+        """
+
+        msg.attach(MIMEText(email_content, 'plain'))
+
+        # Get settings from database (with decryption for sensitive data)
+        smtp_server = get_setting('smtp_server') or Config.SMTP_SERVER
+        smtp_port = int(get_setting('smtp_port') or Config.SMTP_PORT)
+        smtp_username = get_setting('smtp_username') or Config.SMTP_USERNAME
+        smtp_password = get_decrypted_setting('smtp_password') or Config.SMTP_PASSWORD
+        email_from = get_setting('email_from') or Config.EMAIL_FROM
+        email_to = get_setting('email_to') or Config.EMAIL_TO
+
+        # Send email using SMTP
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
+        server.login(smtp_username, smtp_password)
+        server.sendmail(email_from, email_to, msg.as_string())
+        server.quit()
+
+        app.logger.info(f"Email notification sent successfully to {Config.EMAIL_TO}")
+        return True
+    except Exception as e:
+        app.logger.error(f"Error sending email notification: {e}")
+        # For demo purposes, don't fail the request if email fails
+        return False
 
 @app.route('/')
 @login_required
@@ -86,32 +135,33 @@ def login():
             return redirect(url_for('login'))
 
         user = get_user_by_username(username)
-        if user and user['password_hash'] == password:  # Simple check for demo
-            # Create a simple user object for Flask-Login
-            class User:
-                def __init__(self, user_data):
-                    self.id = user_data['id']
-                    self.username = user_data['username']
-                    self.role = user_data['role']
-                    self.is_active = user_data['is_active']
+        if user:
+            from werkzeug.security import check_password_hash
+            if check_password_hash(user['password_hash'], password):
+                # Create a simple user object for Flask-Login
+                class User:
+                    def __init__(self, user_data):
+                        self.id = user_data['id']
+                        self.username = user_data['username']
+                        self.role = user_data['role']
+                        self.is_active = user_data['is_active']
 
-                @property
-                def is_authenticated(self):
-                    return True
+                    @property
+                    def is_authenticated(self):
+                        return True
 
-                @property
-                def is_anonymous(self):
-                    return False
+                    @property
+                    def is_anonymous(self):
+                        return False
 
-                def get_id(self):
-                    return str(self.id)
+                    def get_id(self):
+                        return str(self.id)
 
-            login_user(User(user))
-            flash(f'Welcome back, {username}!', 'success')
-            next_page = request.args.get('next')
-            return redirect(next_page) if next_page else redirect(url_for('index'))
-        else:
-            flash('Invalid username or password.', 'error')
+                login_user(User(user))
+                flash(f'Welcome back, {username}!', 'success')
+                next_page = request.args.get('next')
+                return redirect(next_page) if next_page else redirect(url_for('index'))
+        flash('Invalid username or password.', 'error')
 
     return render_template('login.html')
 
@@ -138,7 +188,11 @@ def submit():
             return redirect(url_for('submit'))
 
         insert_request(requester_name, department, category, description)
-        flash('Request submitted successfully!', 'success')
+
+        # Send email notification
+        send_notification_email(requester_name, department, category, description)
+
+        flash('Request submitted successfully! IT support has been notified.', 'success')
         return redirect(url_for('submit'))
 
     departments = get_departments()
@@ -150,15 +204,25 @@ def submit():
 def admin():
     """Admin panel to view and update requests."""
     if request.method == 'POST':
+        # Handle request status updates
         request_id = request.form.get('request_id')
         status = request.form.get('status')
         if request_id and status:
             update_request_status(request_id, status)
             flash('Request status updated successfully!', 'success')
-        return redirect(url_for('admin'))
+            return redirect(url_for('admin'))
+
+        # Handle settings updates
+        setting_key = request.form.get('setting_key')
+        setting_value = request.form.get('setting_value')
+        if setting_key and setting_value is not None:
+            update_setting(setting_key, setting_value)
+            flash('Settings updated successfully!', 'success')
+            return redirect(url_for('admin'))
 
     requests_data = get_all_requests()
-    return render_template('admin.html', requests=requests_data)
+    settings = get_all_settings()
+    return render_template('admin.html', requests=requests_data, settings=settings)
 
 if __name__ == '__main__':
     app.run(debug=Config.DEBUG)
