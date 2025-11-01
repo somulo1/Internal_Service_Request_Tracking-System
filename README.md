@@ -29,21 +29,30 @@ A lightweight web-based system built with Flask and SQLite to automate internal 
    ```
 
 4. **Access the application**:
-   - Submit requests: http://localhost:5000/submit
-   - Admin panel: http://localhost:5000/admin
+   - **Live Demo**: https://internal-service-request-tracking-system.onrender.com
+   - Local development: http://localhost:5000/login
+   - Submit requests: http://localhost:5000/submit (staff only)
+   - Admin panel: http://localhost:5000/admin (admin only)
 
 ## Usage
 
-### Submitting a Request
-1. Navigate to `/submit`
-2. Fill in your name, select department and category
-3. Provide a detailed description
-4. Click "Submit Request"
+### Authentication
+**Demo Credentials:**
+- **Admin Account**: username: `admin`, password: `admin123`
+- **Staff Account**: username: `staff`, password: `staff123`
 
-### Admin Panel
-1. Navigate to `/admin`
+### Submitting a Request (Staff)
+1. Login with staff credentials
+2. Navigate to Submit Request
+3. Fill in your name, select department and category
+4. Provide a detailed description
+5. Click "Submit Request"
+
+### Admin Panel (Admin Only)
+1. Login with admin credentials
 2. View all submitted requests in a table
-3. Update request status using the dropdown and "Update" button
+3. Update request status using dropdown menus
+4. Configure email notification settings
 
 ## Design Notes
 
