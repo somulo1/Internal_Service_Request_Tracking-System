@@ -59,3 +59,59 @@ def update_request_status(request_id, status):
     ''', (status, request_id))
     conn.commit()
     conn.close()
+
+def init_auth_db():
+    """Initialize authentication database tables."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Create users table for authentication
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            role TEXT DEFAULT 'staff',
+            is_active BOOLEAN DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+
+    # Create default admin user if not exists
+    cursor.execute('SELECT id FROM users WHERE username = ?', ('admin',))
+    if not cursor.fetchone():
+        # Note: In production, use proper password hashing
+        cursor.execute('''
+            INSERT INTO users (username, email, password_hash, role)
+            VALUES (?, ?, ?, ?)
+        ''', ('admin', 'admin@company.com', 'admin123', 'admin'))
+
+    # Create default staff user
+    cursor.execute('SELECT id FROM users WHERE username = ?', ('staff',))
+    if not cursor.fetchone():
+        cursor.execute('''
+            INSERT INTO users (username, email, password_hash, role)
+            VALUES (?, ?, ?, ?)
+        ''', ('staff', 'staff@company.com', 'staff123', 'staff'))
+
+    conn.commit()
+    conn.close()
+
+def get_user_by_username(username):
+    """Get user by username for authentication."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM users WHERE username = ? AND is_active = 1', (username,))
+    user = cursor.fetchone()
+    conn.close()
+    return user
+
+def get_user_by_id(user_id):
+    """Get user by ID for Flask-Login."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM users WHERE id = ? AND is_active = 1', (user_id,))
+    user = cursor.fetchone()
+    conn.close()
+    return user
