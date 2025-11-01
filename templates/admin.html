@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Panel{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h2>Service Requests Management</h2>
+            </div>
+            <div class="card-body">
+                {% if requests %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Department</th>
+                                    <th>Category</th>
+                                    <th>Description</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for req in requests %}
+                                    <tr>
+                                        <td>{{ req['id'] }}</td>
+                                        <td>{{ req['requester_name'] }}</td>
+                                        <td>{{ req['department'] }}</td>
+                                        <td>{{ req['category'] }}</td>
+                                        <td>{{ req['description'] }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ 'warning' if req['status'] == 'Pending' else 'success' if req['status'] == 'Resolved' else 'secondary' }}">
+                                                {{ req['status'] }}
+                                            </span>
+                                        </td>
+                                        <td>{{ req['created_at'] }}</td>
+                                        <td>
+                                            <form method="POST" class="d-inline">
+                                                <input type="hidden" name="request_id" value="{{ req['id'] }}">
+                                                <select name="status" class="form-select form-select-sm d-inline-block w-auto me-2">
+                                                    <option value="Pending" {{ 'selected' if req['status'] == 'Pending' else '' }}>Pending</option>
+                                                    <option value="In Progress" {{ 'selected' if req['status'] == 'In Progress' else '' }}>In Progress</option>
+                                                    <option value="Resolved" {{ 'selected' if req['status'] == 'Resolved' else '' }}>Resolved</option>
+                                                </select>
+                                                <button type="submit" class="btn btn-sm btn-primary">Update</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No service requests found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
