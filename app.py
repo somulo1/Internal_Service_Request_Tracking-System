@@ -1,7 +1,7 @@
 """
 Main Flask application for the Internal Service Request Tracking System.
 """
-
+import os
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import check_password_hash
@@ -85,7 +85,7 @@ def send_notification_email(requester_name, department, category, description):
         Description: {description}
 
         Please review and resolve this request in the admin panel.
-        Login to: https://internal-service-request-tracking-system.onrender.com/admin
+        Login to: https://internal-service-request-tracking-system.onrender.com/
         """
 
         msg.attach(MIMEText(email_content, 'plain'))
@@ -225,4 +225,5 @@ def admin():
     return render_template('admin.html', requests=requests_data, settings=settings)
 
 if __name__ == '__main__':
-    app.run(debug=Config.DEBUG)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=Config.DEBUG)
