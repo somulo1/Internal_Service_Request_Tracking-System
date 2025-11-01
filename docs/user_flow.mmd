@@ -1,0 +1,31 @@
+flowchart TD
+    Start([User Access Application]) --> A{Choose Action}
+    A --> B[Submit Request]
+    A --> C[Admin Panel]
+
+    B --> D[Fill Request Form]
+    D --> E{Validate Input}
+    E -->|Invalid| F[Show Error Message]
+    F --> D
+    E -->|Valid| G[Save to Database]
+    G --> H[Show Success Message]
+    H --> I[Redirect to Form]
+
+    C --> J[View All Requests]
+    J --> K{Select Action}
+    K --> L[Update Status]
+    K --> M[View Details]
+
+    L --> N[Select New Status]
+    N --> O[Update Database]
+    O --> P[Show Confirmation]
+    P --> J
+
+    M --> Q[Display Request Details]
+    Q --> J
+
+    style Start fill:#e3f2fd
+    style B fill:#f3e5f5
+    style C fill:#fff3e0
+    style G fill:#e8f5e8
+    style O fill:#e8f5e8

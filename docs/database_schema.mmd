@@ -1,0 +1,32 @@
+erDiagram
+    REQUESTS {
+        integer id PK "Auto-increment"
+        text requester_name "Required"
+        text department "Required"
+        text category "Required"
+        text description "Required"
+        text status "Default: Pending"
+        timestamp created_at "Auto-generated"
+    }
+
+    REQUESTS ||--o{ STATUS_UPDATES : has
+    REQUESTS ||--o{ DEPARTMENTS : belongs_to
+    REQUESTS ||--o{ CATEGORIES : belongs_to
+
+    DEPARTMENTS {
+        text name PK
+        text description
+    }
+
+    CATEGORIES {
+        text name PK
+        text description
+    }
+
+    STATUS_UPDATES {
+        integer id PK
+        integer request_id FK
+        text old_status
+        text new_status
+        timestamp updated_at
+    }

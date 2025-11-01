@@ -1,0 +1,24 @@
+graph TB
+    A[User Browser] --> B[Flask Application]
+    B --> C[Routes Handler]
+    C --> D[Submit Route<br>/submit]
+    C --> E[Admin Route<br>/admin]
+    D --> F[Form Validation]
+    F --> G[Database Layer]
+    E --> H[Request Management]
+    H --> G
+    G --> I[SQLite Database<br>requests.db]
+    B --> J[External API<br>JSONPlaceholder]
+    J --> K[Department Data]
+    D --> K
+    B --> L[Templates Layer]
+    L --> M[Base Template<br>base.html]
+    L --> N[Submit Template<br>submit.html]
+    L --> O[Admin Template<br>admin.html]
+    M --> P[Bootstrap CSS/JS<br>CDN]
+
+    style A fill:#e1f5fe
+    style B fill:#fff3e0
+    style G fill:#e8f5e8
+    style I fill:#fff8e1
+    style J fill:#fce4ec
