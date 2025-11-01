@@ -26,7 +26,29 @@ init_auth_db()
 def load_user(user_id):
     """Load user for Flask-Login."""
     from database import get_user_by_id
-    return get_user_by_id(user_id)
+    user_data = get_user_by_id(user_id)
+    if user_data:
+        # Create a simple user object for Flask-Login
+        class User:
+            def __init__(self, user_data):
+                self.id = user_data['id']
+                self.username = user_data['username']
+                self.role = user_data['role']
+                self.is_active = user_data['is_active']
+
+            @property
+            def is_authenticated(self):
+                return True
+
+            @property
+            def is_anonymous(self):
+                return False
+
+            def get_id(self):
+                return str(self.id)
+
+        return User(user_data)
+    return None
 
 def get_departments():
     """Fetch department data from external API."""
