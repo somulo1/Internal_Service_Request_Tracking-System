@@ -85,7 +85,7 @@ def send_notification_email(requester_name, department, category, description):
         Description: {description}
 
         Please review and resolve this request in the admin panel.
-        Login to: http://your-domain.com/admin
+        Login to: https://internal-service-request-tracking-system.onrender.com
         """
 
         msg.attach(MIMEText(email_content, 'plain'))
