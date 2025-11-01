@@ -68,3 +68,49 @@ The application is configured for deployment on Render:
 - **Frontend**: HTML, Bootstrap 5
 - **External API**: JSONPlaceholder for department data
 - **Deployment**: Gunicorn, Render
+
+## Documentation
+
+For detailed technical documentation, see the [docs/](docs/) directory:
+
+- **[Architecture Overview](docs/ARCHITECTURE.md)**: System design and technology stack
+- **[API Reference](docs/API_REFERENCE.md)**: Complete API documentation
+- **[Deployment Guide](docs/DEPLOYMENT.md)**: Setup and deployment instructions
+- **[Contributing Guidelines](docs/CONTRIBUTING.md)**: Development workflow and standards
+
+### Visual Diagrams
+
+- **[System Architecture](docs/system_architecture.mmd)**: Mermaid diagram of system components
+- **[Database Schema](docs/database_schema.mmd)**: Entity relationship diagram
+- **[User Flow](docs/user_flow.mmd)**: User interaction flowchart
+
+### Additional Documentation
+
+- **[Changelog](docs/CHANGELOG.md)**: Version history and release notes
+
+## Project Structure
+
+```
+Internal_Service_Request_Tracking-System/
+├── app.py                 # Main Flask application
+├── config.py             # Configuration settings
+├── database.py           # Database operations
+├── requirements.txt      # Python dependencies
+├── Procfile             # Deployment configuration
+├── LICENSE              # MIT License
+├── README.md            # Project documentation
+├── requests.db          # SQLite database file
+├── templates/           # Jinja2 templates
+│   ├── base.html        # Base template with Bootstrap
+│   ├── submit.html      # Request submission form
+│   └── admin.html       # Admin dashboard
+├── static/              # Static assets (reserved for future use)
+└── docs/                # Technical documentation
+    ├── ARCHITECTURE.md
+    ├── API_REFERENCE.md
+    ├── DEPLOYMENT.md
+    ├── CONTRIBUTING.md
+    ├── system_architecture.mmd
+    ├── database_schema.mmd
+    └── user_flow.mmd
+```
